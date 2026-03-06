@@ -2,18 +2,7 @@
 local OrionLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/HeavenlyScripts/1nig1htmare1234-OrionLib-with-Black-CheckMarks/main/Orion.lua"))()
 
 local Window = OrionLib:MakeWindow({
-    Name = "│axon HUB│〄Emergency Hamburg",
-    HidePremium = false,... (51 KB restante(s))
-
-axon HUB(1) (1).txt
-101 KB
-Steve — 03/03/2026, 08:48
-@everyone More Source codes????? 
-
-local OrionLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/HeavenlyScripts/1nig1htmare1234-OrionLib-with-Black-CheckMarks/main/Orion.lua"))()
-
-local Window = OrionLib:MakeWindow({
-    Name = "│axon HUB│〄Emergency Hamburg",
+    Name = "│Trixo v13 │〄Emergency Hamburg",
     HidePremium = false,
     SaveConfig = true,
     ConfigFolder = "test",
@@ -1675,6 +1664,1755 @@ local function enableFly()
                 lastPosition = newPos
             end
 
-            alignOrientation.CFrame = CFrame.new(Vector3.zero, c... (51 KB restante(s))
-axon HUB(1) (1).txt
-101 KB
+            alignOrientation.CFrame = CFrame.new(Vector3.zero, camCFrame.LookVector)
+            RunService.Heartbeat:Wait()
+        end
+    end)
+end
+
+local function disableFly()
+    isFlying = false
+    local humanoid = player.Character and player.Character:FindFirstChild("Humanoid")
+    if humanoid then humanoid.PlatformStand = false end
+    if attachment then attachment:Destroy() end
+    if alignPosition then alignPosition:Destroy() end
+    if alignOrientation then alignOrientation:Destroy() end
+end
+
+-- 🔘 Fly Toggle
+Tab5:AddToggle({
+    Name = "⚫ Fly",
+    CurrentValue = false,
+    Callback = function(v)
+        if v then
+            enableFly()
+        else
+            disableFly()
+        end
+    end
+})
+
+
+Tab5:AddSlider({
+	Name = "⚫Fly Speed",
+	Min = 10,
+	Max = 150,
+	Default = 1,
+	Color = Color3.fromRGB(255,255,255),
+	Increment = 1,
+	ValueName = "Speed",
+	CurrentValue = flyingSpeed,
+    Callback = function(v)
+        flyingSpeed = v
+    end   
+})
+
+-- ⌨ Keybind V für Fly Toggle
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode == Enum.KeyCode.V then
+        if isFlying then
+            disableFly()
+        else
+            enableFly()
+        end
+    end
+end)
+
+
+local spinOn = false
+Tab5:AddToggle({
+    Name = "⚫ Spinbot",
+    CurrentValue = false,
+    Callback = function(val)
+        spinOn = val
+    end,
+})
+
+-- Spinbot logic: rotates the player's character continuously while enabled
+RunService.Stepped:Connect(function()
+    if spinOn and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        local hrp = LocalPlayer.Character.HumanoidRootPart
+        hrp.CFrame = hrp.CFrame * CFrame.Angles(0, math.rad(60), 0)
+    end
+end)
+
+Tab5:AddButton({
+    Name = "⚫ Instant-Respawn",
+    Callback = function()
+        local player = game.Players.LocalPlayer
+        if player.Character then
+            player.Character:BreakJoints()
+            wait(0.1)
+            player:LoadCharacter()
+        end
+    end,
+})
+
+Tab6 = Window:MakeTab({
+	Name = "Car | 🛺",
+	Icon = "",
+	PremiumOnly = false
+})
+
+Tab6:AddSection({
+	Name = "Car-Tuning"
+})
+
+local VEHICLE_FOLDER_NAME = "Vehicles"
+
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local workspace = game:GetService("Workspace")
+
+
+-- State
+local currentLevel = 0
+local maxLevel = 6
+local attrArmor = 0
+local attrBrakes = 0
+local attrEngine = 0
+
+-- Helpers
+local function notify(title, content, duration)
+	pcall(function()
+		if Rayfield and Rayfield.Notify then
+			OrionLib:MakeNotification({Title = title or "Tuning", Content = content or "", Duration = duration or 2})
+		end
+	end)
+end
+
+local function findPlayerVehicle()
+	local vehicleFolder = workspace:FindFirstChild(VEHICLE_FOLDER_NAME)
+	if not vehicleFolder then return nil, "Vehicle-Folder nicht gefunden" end
+	local playerVehicle = vehicleFolder:FindFirstChild(player.Name)
+	if not playerVehicle then return nil, "Fahrzeug nicht gefunden" end
+	return playerVehicle
+end
+
+local function applyAttributesToVehicleByValues(armor, brakes, engine)
+	local playerVehicle, err = findPlayerVehicle()
+	if not playerVehicle then return false, err end
+	-- safe set (pcall inside)
+	local ok, e = pcall(function()
+		playerVehicle:SetAttribute("armorLevel", armor)
+		playerVehicle:SetAttribute("brakesLevel", brakes)
+		playerVehicle:SetAttribute("engineLevel", engine)
+	end)
+	if not ok then
+		return false, tostring(e)
+	end
+	return true
+end
+
+local function applyLevelToAll(level)
+	attrArmor = level
+	attrBrakes = level
+	attrEngine = level
+	return applyAttributesToVehicleByValues(attrArmor, attrBrakes, attrEngine)
+end
+
+-- SICHERE Setter-Funktion für Slider-UI (vermeidet callback errors)
+local function safeSetSliderValue(slider, value)
+	if not slider then return end
+	pcall(function()
+		-- probiere die gebräuchlichsten Methoden, falls vorhanden
+		if type(slider.SetValue) == "function" then
+			slider:SetValue(value)
+		elseif type(slider.setValue) == "function" then
+			slider.setValue(slider, value)
+		elseif type(slider.Update) == "function" then
+			slider:Update(value)
+		elseif type(slider.UpdateValue) == "function" then
+			slider:UpdateValue(value)
+		-- falls keine Methode existiert, ist das kein Problem — UI bleibt unverändert.
+		end
+	end)
+end
+
+
+Tab6:AddSlider({
+	Name = "🟢 Engine",
+	Min = 0,
+	Max = maxLevel,
+	Default = 1,
+	Color = Color3.fromRGB(255,255,255),
+	Increment = 1,
+	ValueName = "",
+	CurrentValue = attrEngine,
+	Callback = function(value)
+		attrEngine = math.floor(tonumber(value) or 0)
+		local ok, err = applyAttributesToVehicleByValues(attrArmor, attrBrakes, attrEngine)
+		if ok then
+			currentLevel = math.max(attrArmor, attrBrakes, attrEngine)
+			OrionLib:MakeNotification("Tuning", "Engine set to "..tostring(attrEngine), 1)
+			safeSetSliderValue(levelSlider, currentLevel)
+		else
+			OrionLib:MakeNotification("Tuning Error", tostring(err), 2)
+		end
+	end   
+})
+
+
+
+Tab6:AddSlider({
+	Name = "🟢 Brakes",
+	Min = 0,
+	Max = maxLevel,
+	Default = 1,
+	Color = Color3.fromRGB(255,255,255),
+	Increment = 1,
+	ValueName = "",
+	CurrentValue = attrBrakes,
+	Callback = function(value)
+		attrBrakes = math.floor(tonumber(value) or 0)
+		local ok, err = applyAttributesToVehicleByValues(attrArmor, attrBrakes, attrEngine)
+		if ok then
+			currentLevel = math.max(attrArmor, attrBrakes, attrEngine)
+			OrionLib:MakeNotification("Tuning", "Brakes set to "..tostring(attrBrakes), 1)
+			safeSetSliderValue(levelSlider, currentLevel)
+		else
+			OrionLib:MakeNotification("Tuning Error", tostring(err), 2)
+		end
+	end  
+})
+
+
+
+Tab6:AddSlider({
+	Name = "🟢 Armor",
+	Min = 0,
+	Max = maxLevel,
+	Default = 1,
+	Color = Color3.fromRGB(255,255,255),
+	Increment = 1,
+	ValueName = "",
+	CurrentValue = attrArmor,
+	Callback = function(value)
+		attrArmor = math.floor(tonumber(value) or 0)
+		local ok, err = applyAttributesToVehicleByValues(attrArmor, attrBrakes, attrEngine)
+		if ok then
+			currentLevel = math.max(attrArmor, attrBrakes, attrEngine)
+			OrionLib:MakeNotification("Tuning", "Armor set to "..tostring(attrArmor), 1)
+			safeSetSliderValue(levelSlider, currentLevel)
+		else
+			OrionLib:MakeNotification("Tuning Error", tostring(err), 2)
+		end
+	end   
+})
+
+
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local LocalPlayer = Players.LocalPlayer
+
+-- 🔍 Hilfsfunktion: erkennt ob ein Part eine Felge ist
+local function isRim(part)
+	local name = part.Name:lower()
+	return name:find("rim")
+		or name:find("wheel")
+		or name:find("reifen")
+		or name:find("felge")
+		or (part.Material == Enum.Material.Metal and part.Size.X < 3 and part.Size.Y < 3)
+end
+
+-- 🎨 Farbupdate-Funktion (ohne Lichtfarbe)
+local function updateCarColors(mainColor, rimColor)
+	pcall(function()
+		local vehicles = Workspace:FindFirstChild("Vehicles")
+		if not vehicles then return end
+
+		local car = vehicles:FindFirstChild(LocalPlayer.Name)
+		if not car then return end
+
+		for _, part in ipairs(car:GetDescendants()) do
+			if part:IsA("BasePart") or part:IsA("UnionOperation") or part:IsA("MeshPart") then
+
+				-- Hauptfarbe (Karosserie)
+				if part.Name:lower():find("body") or part.Name:lower():find("chassis") then
+					part.Color = mainColor
+				end
+
+				-- Felgenfarbe
+				if isRim(part) then
+					part.Color = rimColor
+					part.Material = Enum.Material.Metal
+				end
+			end
+		end
+	end)
+end
+
+-- 🧱 Standardfarben
+local mainColor = Color3.fromRGB(255, 255, 255)
+local rimColor = Color3.fromRGB(120, 120, 120)
+
+-- 🎨 UI Farbauswahl (nur Body + Wheels)
+Tab6:AddColorpicker({
+	Name = "🟢 Body Color",
+	Color = mainColor,
+	Callback = function(c)
+		mainColor = c
+		updateCarColors(mainColor, rimColor)
+	end
+})
+
+Tab6:AddColorpicker({
+	Name = "🟢 Wheel Color",
+	Color = rimColor,
+	Callback = function(c)
+		rimColor = c
+		updateCarColors(mainColor, rimColor)
+	end
+})
+
+
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local LocalPlayer = Players.LocalPlayer
+
+-- Funktion: Nummernschild ändern
+local function setPlateText(text)
+    pcall(function()
+        local vehicles = Workspace:FindFirstChild("Vehicles")
+        if not vehicles then return end
+
+        local car = vehicles:FindFirstChild(LocalPlayer.Name)
+        if not car then return end
+
+        local body = car:FindFirstChild("Body", true)
+        if not body then return end
+
+        local plates = body:FindFirstChild("LicensePlates")
+        if not plates then return end
+
+        for _, plate in ipairs(plates:GetChildren()) do
+            if plate:FindFirstChild("Gui") and plate.Gui:FindFirstChild("TextLabel") then
+                plate.Gui.TextLabel.Text = text
+                plate.Gui.TextLabel.TextColor3 = Color3.fromRGB(29, 53, 53)
+            end
+            if plate:FindFirstChild("Decal") then
+                plate.Decal.Color3 = Color3.fromRGB(255, 255, 255)
+            end
+        end
+    end)
+end
+
+
+
+Tab6:AddTextbox({
+	Name = "🟢 Custom Plate",
+	PlaceholderText = "TrixoBeste",
+	RemoveTextAfterFocusLost = false,
+	Callback = function(value)
+		setPlateText(value)
+	end
+})
+
+
+-- 🔧 Services
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local Workspace = game:GetService("Workspace")
+
+-- 🚗 Fahrzeug finden
+local function getVehicle()
+    local vehicles = Workspace:FindFirstChild("Vehicles")
+    if not vehicles then return nil end
+    return vehicles:FindFirstChild(LocalPlayer.Name)
+end
+
+-- 🧩 SpringConstraints finden
+local function getSprings(vehicle)
+    local springs = {}
+    if not vehicle then return springs end
+    for _, obj in ipairs(vehicle:GetDescendants()) do
+        if obj:IsA("SpringConstraint") then
+            table.insert(springs, obj)
+        end
+    end
+    return springs
+end
+
+-- ⚙ Funktion: Fahrwerkshöhe setzen (ohne Notify)
+local function setSuspensionHeight(height)
+    local vehicle = getVehicle()
+    if not vehicle then return end
+
+    for _, spring in ipairs(getSprings(vehicle)) do
+        spring.FreeLength = height
+    end
+end
+
+-- 🎚 Slider für Gesamthöhe
+local currentHeight = 2.5
+Tab6:AddSlider({
+	Name = "🟢 Total height Car",
+	Min = 1,
+	Max = 2.5,
+	Default = 2,
+	Color = Color3.fromRGB(255,255,255),
+	Increment = 1,
+	ValueName = "Studs",
+	CurrentValue = currentHeight,
+    Callback = function(value)
+        currentHeight = value
+        setSuspensionHeight(value)
+    end   
+})
+
+
+Tab6:AddSection({
+	Name = "Car-Fly-Options"
+})
+
+
+
+-- 📦 Services
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local player = Players.LocalPlayer
+
+-- 🚗 Car Fly Variablen
+local carFlyEnabled = false
+local flightSpeed = 2
+
+-- ✈️ Car Fly Logic
+RunService.RenderStepped:Connect(function()
+    if carFlyEnabled and player.Character and player.Character:FindFirstChild("Humanoid") then
+        if player.Character.Humanoid.Sit then
+            local SeatPart = player.Character.Humanoid.SeatPart
+            if SeatPart and SeatPart.Name == "DriveSeat" then
+                local Vehicle = SeatPart.Parent
+                if Vehicle then
+                    if not Vehicle.PrimaryPart then
+                        Vehicle.PrimaryPart = SeatPart
+                    end
+
+                    local PrimaryPartCFrame = Vehicle:GetPrimaryPartCFrame()
+                    local camLook = workspace.CurrentCamera.CFrame.LookVector
+
+                    Vehicle:SetPrimaryPartCFrame(
+                        CFrame.new(PrimaryPartCFrame.Position, PrimaryPartCFrame.Position + camLook) *
+                        CFrame.new(
+                            ((UserInputService:IsKeyDown(Enum.KeyCode.D) and flightSpeed or 0) -
+                            (UserInputService:IsKeyDown(Enum.KeyCode.A) and flightSpeed or 0)) * flightSpeed,
+                            ((UserInputService:IsKeyDown(Enum.KeyCode.E) and flightSpeed / 2 or 0) -
+                            (UserInputService:IsKeyDown(Enum.KeyCode.Q) and flightSpeed / 2 or 0)) * flightSpeed,
+                            ((UserInputService:IsKeyDown(Enum.KeyCode.S) and flightSpeed or 0) -
+                            (UserInputService:IsKeyDown(Enum.KeyCode.W) and flightSpeed or 0)) * flightSpeed
+                        )
+                    )
+                    SeatPart.AssemblyLinearVelocity = Vector3.zero
+                    SeatPart.AssemblyAngularVelocity = Vector3.zero
+                end
+            end
+        end
+    end
+end)
+
+Tab6:AddParagraph("Car Fly INFO","Press X to FLY")
+
+-- 🎛 Car Fly Toggle
+Tab6:AddToggle({
+    Name = "🟢 Car Fly",
+    CurrentValue = false,
+    Flag = "🟢 CarFly",
+    Callback = function(v)
+        carFlyEnabled = v
+        OrionLib:MakeNotification({ Title = "Car Fly", Content = v and "Aktiviert!" or "Deaktiviert!", Duration = 2 })
+    end
+})
+
+
+
+Tab6:AddSlider({
+	Name = "🟢 Car Fly Speed",
+	Min = 1.5,
+	Max = 2,
+	Default = 1,
+	Color = Color3.fromRGB(255,255,255),
+	Increment = 1,
+	ValueName = "Speed",
+	CurrentValue = flightSpeed,
+    Callback = function(v)
+        flightSpeed = v
+    end   
+})
+
+-- ⌨ Keybind X für Car Fly Toggle
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.UserInputType == Enum.UserInputType.Keyboard then
+        if input.KeyCode == Enum.KeyCode.X then
+            carFlyEnabled = not carFlyEnabled
+            OrionLib:MakeNotification({ 
+                Title = "Car Fly", 
+                Content = carFlyEnabled and "Aktiviert!" or "Deaktiviert!", 
+                Duration = 2 
+            })
+        end
+    end
+end)
+
+
+
+Tab6:AddSection({
+	Name = "Car-Mods"
+})
+
+
+function bringCarToPlayer()
+	local player = game.Players.LocalPlayer
+	local char = player.Character or player.CharacterAdded:Wait()
+	local root = char:WaitForChild("HumanoidRootPart", 2)
+	local car = workspace:FindFirstChild("Vehicles") and workspace.Vehicles:FindFirstChild(player.Name)
+
+	if car and root then
+		local seat = car:FindFirstChild("DriveSeat", true)
+		if not seat then
+			OrionLib:MakeNotification({ Title = "❌ Kein Sitz", Content = "DriveSeat im Fahrzeug nicht gefunden", Duration = 4 })
+			return
+		end
+
+		car.PrimaryPart = seat
+		local forward = root.CFrame.LookVector * 10
+		local targetCFrame = CFrame.new(root.Position + forward, root.Position)
+
+		car:SetPrimaryPartCFrame(targetCFrame)
+
+		task.wait(0.5)
+
+		local humanoid = char:FindFirstChildOfClass("Humanoid")
+		if humanoid then seat:Sit(humanoid) end
+
+		OrionLib:MakeNotification({
+			Title = "✅ Auto gebracht",
+			Content = "Dein Fahrzeug wurde zu dir teleportiert und du sitzt drin.",
+			Duration = 4
+		})
+	else
+		OrionLib:MakeNotification({
+			Title = "❌ Fehler",
+			Content = "Kein Fahrzeug gefunden oder du hast keinen Charakter.",
+			Duration = 4
+		})
+	end
+end
+
+-- 🔘 Rayfield Button
+Tab6:AddButton({
+	Name = "🟢 Bring-Car",
+	Callback = function()
+		bringCarToPlayer()
+	end,
+})
+
+-- 🧍 Funktion: Spieler aus Fahrzeug „rausschleudern“
+function exitCar()
+	local character = game.Players.LocalPlayer.Character
+	if character and character:FindFirstChild("Humanoid") then
+		character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+	end
+end
+
+-- 🔘 Rayfield Button: Exit Car
+Tab6:AddButton({
+	Name = "🟢 Exit Car",
+	Callback = function()
+		exitCar()
+	end
+})
+
+function teleportCarToNearestDealer()
+	local car = workspace:FindFirstChild("Vehicles") and workspace.Vehicles:FindFirstChild(LocalPlayer.Name)
+	if not car or not car:FindFirstChild("DriveSeat", true) then return end
+
+	local driveSeat = car:FindFirstChild("DriveSeat", true)
+	car.PrimaryPart = driveSeat
+	if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+		driveSeat:Sit(LocalPlayer.Character.Humanoid)
+	end
+
+	local closestDealer, shortest = nil, math.huge
+	for _, dealer in ipairs(workspace:WaitForChild("Dealers"):GetChildren()) do
+		if dealer:IsA("Model") and dealer:FindFirstChild("PrimaryPart") then
+			local dist = (dealer.PrimaryPart.Position - driveSeat.Position).Magnitude
+			if dist < shortest then
+				shortest = dist
+				closestDealer = dealer
+			end
+		end
+	end
+	if not closestDealer then return end
+
+	local function tweenTo(pos)
+		local tweenInfo = TweenInfo.new((car.PrimaryPart.Position - pos).Magnitude / 175, Enum.EasingStyle.Linear)
+		local goal = {CFrame = CFrame.new(pos)}
+		local proxy = Instance.new("CFrameValue")
+		proxy.Value = car:GetPivot()
+		proxy:GetPropertyChangedSignal("Value"):Connect(function()
+			car:PivotTo(proxy.Value)
+			driveSeat.AssemblyLinearVelocity = Vector3.zero
+			driveSeat.AssemblyAngularVelocity = Vector3.zero
+		end)
+		TweenService:Create(proxy, tweenInfo, {Value = CFrame.new(pos)}):Play()
+	end
+
+	local dealerPos = closestDealer.PrimaryPart.Position - closestDealer.PrimaryPart.CFrame.LookVector * 10
+	tweenTo(dealerPos)
+end
+
+Tab6:AddButton({
+	Name = "🟢 Sit in Car",
+	Callback = function()
+		teleportCarToNearestDealer()
+	end
+})
+
+Tab6:AddSection({
+	Name = "Crazy Mods"
+})
+
+Tab6:AddParagraph("Fling INFO","ONLY IN CAR FLY")
+
+-- Values
+flingPower = 5000
+hiddenfling = false
+
+Players = game:GetService("Players")
+RunService = game:GetService("RunService")
+lp = Players.LocalPlayer
+UserInputService = game:GetService("UserInputService")
+
+-- Detection (beibehalten)
+ReplicatedStorage = game:GetService("ReplicatedStorage")
+if not ReplicatedStorage:FindFirstChild("juisdfj0i32i0eidsuf0iok") then
+	detection = Instance.new("Decal")
+	detection.Name = "juisdfj0i32i0eidsuf0iok"
+	detection.Parent = ReplicatedStorage
+end
+
+-- Fling Loop exakt wie original
+function fling()
+	local hrp, c, vel, movel = nil, nil, nil, 0.1
+
+	while true do
+		RunService.Heartbeat:Wait()
+		if hiddenfling then
+
+			while hiddenfling and not (c and c.Parent and hrp and hrp.Parent) do
+				RunService.Heartbeat:Wait()
+				c = lp.Character
+				hrp = c and c:FindFirstChild("HumanoidRootPart")
+			end
+
+			if hiddenfling and hrp then
+				vel = hrp.Velocity
+
+				hrp.Velocity = vel * flingPower + Vector3.new(0, flingPower, 0)
+				RunService.RenderStepped:Wait()
+
+				if hrp and hrp.Parent then
+					hrp.Velocity = vel
+				end
+
+				RunService.Stepped:Wait()
+
+				if hrp and hrp.Parent then
+					hrp.Velocity = vel + Vector3.new(0, movel, 0)
+					movel = movel * -1
+				end
+			end
+		end
+	end
+end
+
+task.spawn(fling)
+
+-- Toggle
+Tab6:AddToggle({
+    Name = "🟢 Fling ",
+    CurrentValue = false,
+    Callback = function(Value)
+        hiddenfling = Value
+    end,
+})
+
+
+player = game:GetService("Players").LocalPlayer
+RunService = game:GetService("RunService")
+vehicleGodMode = false
+lastVehicle = nil
+
+-- 🚀 Fahrzeugstatus aktualisieren
+RunService.Heartbeat:Connect(function()
+	if not vehicleGodMode then return end
+
+	if not lastVehicle or not lastVehicle.Parent then
+		local vehiclesFolder = workspace:FindFirstChild("Vehicles")
+		lastVehicle = vehiclesFolder and vehiclesFolder:FindFirstChild(player.Name)
+	end
+
+	if lastVehicle then
+		lastVehicle:SetAttribute("IsOn", true)
+		lastVehicle:SetAttribute("currentHealth", 500)
+		lastVehicle:SetAttribute("currentFuel", math.huge)
+	end
+end)
+
+-- 🔘 Rayfield Toggle
+Tab6:AddToggle({
+	Name = "🟢 Car-Godmode",
+	CurrentValue = false,
+	Flag = "CarGodModeToggle",
+	Callback = function(Value)
+		vehicleGodMode = Value
+		if not Value then lastVehicle = nil end
+	end
+})
+
+
+-- 🟢 Status-Variable
+STATE = "normal"
+
+-- 🟢 Status-Variable (NICHT automatisch aktiv)
+local GhostEnabled = false
+local lastColor = nil
+
+-- 🚗 Funktion zum Umschalten der Materialeffekte
+local function changeCarToGhost(state)
+    local car = workspace.Vehicles:FindFirstChild(game.Players.LocalPlayer.Name)
+    if not car then return end
+
+    local bodyFolder = car:FindFirstChild("Body")
+    if not bodyFolder then return end
+
+    local part = bodyFolder:FindFirstChild("Body") or bodyFolder:FindFirstChild("Main")
+    if not part or not part:IsA("MeshPart") then return end
+
+    if state then
+        -- 🔮 Speichere originale Farbe einmal
+        if not lastColor then
+            lastColor = part.Color
+        end
+
+        part.Material = Enum.Material.ForceField
+        part.Color = Color3.fromRGB(29, 53, 53) -- Ghost-Teal
+    else
+        -- 🔁 Zurücksetzen
+        part.Material = Enum.Material.SmoothPlastic
+        part.Color = lastColor or Color3.fromRGB(255, 255, 255)
+    end
+end
+
+-- 🧠 Rayfield Toggle – aktiviert NUR beim Anklicken!
+Tab6:AddToggle({
+    Name = "🟢 Car Ghost",
+    Default = false,
+    Callback = function(Value)  -- ⚠️ Wichtig: Value benutzen!
+        GhostEnabled = Value
+        changeCarToGhost(Value)
+    end
+})
+
+carESPEnabled = false
+highlights = {}
+
+function toggleCarESP(state)
+	carESPEnabled = state
+
+	-- Vorhandene Highlights entfernen
+	for _, h in pairs(highlights) do
+		if h and h.Parent then
+			h:Destroy()
+		end
+	end
+	highlights = {}
+
+	if not carESPEnabled then return end
+
+	-- Neue Highlights hinzufügen
+	local vehicles = workspace:FindFirstChild("Vehicles")
+	if vehicles then
+		for _, vehicle in pairs(vehicles:GetChildren()) do
+			if vehicle:IsA("Model") and vehicle:FindFirstChildWhichIsA("BasePart") then
+				local highlight = Instance.new("Highlight")
+				highlight.Adornee = vehicle
+				highlight.FillColor = Color3.fromRGB(255, 0, 0)
+				highlight.FillTransparency = 0.5
+				highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+				highlight.OutlineTransparency = 0
+				highlight.Parent = vehicle
+				table.insert(highlights, highlight)
+			end
+		end
+	end
+end
+
+-- Toggle in Rayfield
+Tab6:AddToggle({
+	Name = "🟢 Car-Esp",
+	CurrentValue = false,
+	Flag = "CarESP",
+	Callback = function(Value)
+		toggleCarESP(Value)
+	end,
+})
+
+
+
+Tab6:AddSection({
+	Name = "Speed-Mods"
+})
+
+
+-- State
+boostEnabled = false
+boostConnection = nil
+speedValue = 250 -- default studs/sec, einstellbar per Slider
+
+-- Health-protection state
+healthConn = nil
+originalMaxHealth = nil
+humanoidRef = nil
+
+-- Helper: get player's humanoid & HRP
+function getCharacterParts()
+    if not player.Character then return nil end
+    local char = player.Character
+    local humanoid = char:FindFirstChildOfClass("Humanoid")
+    local hrp = char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso") or char:FindFirstChild("LowerTorso")
+    return char, humanoid, hrp
+end
+
+-- Apply velocity each frame (enforced)
+function startBoostEnforcer()
+    if boostConnection then return end
+    boostConnection = RunService.RenderStepped:Connect(function()
+        if not boostEnabled then return end
+        local char, humanoid, hrp = getCharacterParts()
+        if hrp and hrp.Parent and boostEnabled then
+            -- apply forward velocity while preserving vertical velocity
+            local forward = hrp.CFrame.LookVector
+            local currentY = 0
+            -- prefer AssemblyLinearVelocity if available
+            local ok, av = pcall(function() return hrp.AssemblyLinearVelocity end)
+            if ok and type(av) == "Vector3" then currentY = av.Y else currentY = hrp.Velocity.Y end
+
+            local desired = Vector3.new(forward.X * speedValue, currentY, forward.Z * speedValue)
+            pcall(function()
+                -- AssemblyLinearVelocity is preferred
+                if hrp and hrp.Parent then
+                    hrp.AssemblyLinearVelocity = desired
+                else
+                    hrp.Velocity = desired
+                end
+            end)
+        end
+    end)
+end
+
+function stopBoostEnforcer()
+    if boostConnection then
+        pcall(function() boostConnection:Disconnect() end)
+        boostConnection = nil
+    end
+end
+
+-- Health protection: prevent any damage by keeping Health at MaxHealth
+function enableNoDamage()
+    -- cleanup existing
+    if healthConn then
+        pcall(function() healthConn:Disconnect() end)
+        healthConn = nil
+    end
+
+    local char, humanoid, hrp = getCharacterParts()
+    if not humanoid then return end
+    humanoidRef = humanoid
+
+    -- store original MaxHealth to restore later
+    originalMaxHealth = humanoid.MaxHealth
+
+    -- increase MaxHealth to a high value so one-shot damage is less likely
+    pcall(function()
+        humanoid.MaxHealth = math.max(humanoid.MaxHealth, 100000)
+        humanoid.Health = humanoid.MaxHealth
+    end)
+
+    -- whenever Health changes, restore it to MaxHealth
+    healthConn = humanoid:GetPropertyChangedSignal("Health"):Connect(function()
+        pcall(function()
+            if humanoid and humanoid.Parent then
+                if humanoid.Health < humanoid.MaxHealth then
+                    humanoid.Health = humanoid.MaxHealth
+                end
+            end
+        end)
+    end)
+end
+
+function disableNoDamage()
+    -- disconnect health protector
+    if healthConn then
+        pcall(function() healthConn:Disconnect() end)
+        healthConn = nil
+    end
+    -- restore MaxHealth if possible
+    if humanoidRef and humanoidRef.Parent and originalMaxHealth then
+        pcall(function()
+            humanoidRef.MaxHealth = originalMaxHealth
+            humanoidRef.Health = math.clamp(humanoidRef.Health, 0, humanoidRef.MaxHealth)
+        end)
+    end
+    humanoidRef = nil
+    originalMaxHealth = nil
+end
+
+-- Toggle function combining boost and no-damage
+function enableSafeSpeedBoost(val)
+    boostEnabled = val
+    if val then
+        startBoostEnforcer()
+        enableNoDamage()
+    else
+        stopBoostEnforcer()
+        disableNoDamage()
+    end
+end
+
+-- Ensure protection re-applies on respawn
+player.CharacterAdded:Connect(function(char)
+    -- slight delay to allow humanoid to initialize
+    task.wait(0.2)
+    if boostEnabled then
+        -- re-enable protections for new character
+        enableNoDamage()
+        -- boost enforcer already uses getCharacterParts(), so continues working
+    end
+end)
+
+
+
+Tab6:AddSlider({
+	Name = "🟢 Boost Speed",
+	Min = 0,
+	Max = 300,
+	Default = 5,
+	Color = Color3.fromRGB(255,255,255),
+	Increment = 1,
+	ValueName = "KMH",
+	CurrentValue = speedValue,
+    Callback = function(value)
+        speedValue = math.floor(tonumber(value) or speedValue)
+        -- immediate feedback: if boosting, no need to restart connection (enforcer reads speedValue each frame)
+        pcall(function() OrionLib:MakeNotification({Title = "Speed", Content = "Speed gesetzt: "..tostring(speedValue), Duration = 1}) end)
+    end   
+})
+
+-- Toggle on/off
+Tab6:AddToggle({
+    Name = "🟢 Speed Boost (Safe Mode)",
+    CurrentValue = false,
+    Flag = "BoostToggle",
+    Callback = function(Value)
+        enableSafeSpeedBoost(Value)
+        if Value then
+            pcall(function() OrionLib:MakeNotification({Title = "Boost", Content = "Boost aktiviert (Kein Schaden)", Duration = 2}) end)
+        else
+            pcall(function() OrionLib:MakeNotification({Title = "Boost", Content = "Boost deaktiviert", Duration = 2}) end)
+        end
+    end
+})
+
+-- Clean up on script end (if executor supports)
+function cleanup()
+    stopBoostEnforcer()
+    disableNoDamage()
+end
+
+-- Attempt cleanup on unload (some executors support this)
+if syn and syn.protect_gui then
+    -- noop, leave it
+end
+
+Tab7 = Window:MakeTab({
+	Name = "Police | 👮",
+	Icon = "",
+	PremiumOnly = false
+})
+
+Tab7:AddSection({
+	Name = "🔵 Radar-Settings"
+})
+
+-- Auto AFK-Breaker
+function EnableAntiAFK()
+    for _, conn in ipairs(getconnections(game:GetService("Players").LocalPlayer.Idled)) do
+        conn:Disable()
+    end
+end
+
+Tab7:AddButton({
+    Name = "🔵 Anti-AFK",
+    Callback = EnableAntiAFK
+})
+
+
+
+
+
+Players = game:GetService("Players")
+ReplicatedStorage = game:GetService("ReplicatedStorage")
+Workspace = game:GetService("Workspace")
+LocalPlayer = Players.LocalPlayer
+
+
+-- Config
+local REMOTE_FOLDER_NAME = "MW5"
+local REMOTE_ID = "f84ea8db-e793-4805-ba8c-ec190e8516d9"
+
+RadarFarmEnabled = false
+
+function notify(title, content, dur)
+    if Rayfield and Rayfield.Notify then
+        pcall(function() OrionLib:MakeNotification({ Title = title, Content = content, Duration = dur or 3 }) end)
+    else
+        warn(title .. ": " .. tostring(content))
+    end
+end
+
+function resolveRemote()
+    -- Versuche mit WaitForChild (timeout), damit wir nicht ewig hängen bleiben
+    local folder = nil
+    local ok, err = pcall(function() folder = ReplicatedStorage:WaitForChild(REMOTE_FOLDER_NAME, 5) end)
+    if not ok or not folder then
+        return nil, "Remote folder '" .. REMOTE_FOLDER_NAME .. "' not found"
+    end
+
+    local remote = nil
+    ok, err = pcall(function() remote = folder:WaitForChild(REMOTE_ID, 5) end)
+    if not ok or not remote then
+        return nil, "Remote id '" .. REMOTE_ID .. "' not found in folder '" .. REMOTE_FOLDER_NAME .. "'"
+    end
+
+    return remote, nil
+end
+
+function startRadarFarm()
+    local radarRemote, errMsg = resolveRemote()
+    if not radarRemote then
+        OrionLib:MakeNotification("RadarFarm error", errMsg or "Remote not found", 4)
+        return
+    end
+
+    OrionLib:MakeNotification("RadarFarm", "Starting radar farm...", 3)
+    -- Hauptloop
+    while RadarFarmEnabled do
+        local char = LocalPlayer.Character
+        if not char then
+            -- warte kurz, falls Charakter noch nicht geladen
+            char = LocalPlayer.CharacterAdded and LocalPlayer.CharacterAdded:Wait() or nil
+        end
+
+        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+        local radarGun = char and char:FindFirstChild("Radar Gun")
+
+        if hrp and radarGun then
+            local vehiclesFolder = Workspace:FindFirstChild("Vehicles")
+            if vehiclesFolder then
+                -- kopiere children in eine Tabelle, falls während Iteration verändert wird
+                local vehicles = vehiclesFolder:GetChildren()
+                for _, vehicle in ipairs(vehicles) do
+                    if vehicle and vehicle:IsA("Model") then
+                        local driveSeat = vehicle:FindFirstChild("DriveSeat")
+                        if driveSeat and driveSeat.Position and driveSeat.Occupant then
+                            local ok, dir = pcall(function()
+                                local d = (driveSeat.Position - hrp.Position)
+                                if d.Magnitude == 0 then
+                                    return nil
+                                end
+                                return d.Unit
+                            end)
+
+                            if ok and dir then
+                                -- immer pcall beim FireServer um Fehler zu vermeiden
+                                pcall(function()
+                                    if radarRemote and radarRemote.FireServer then
+                                        radarRemote:FireServer(radarGun, driveSeat.Position, dir)
+                                    end
+                                end)
+                            end
+                        end
+                    end
+                end
+            end
+        end
+
+        task.wait(1)
+    end
+
+    OrionLib:MakeNotification("RadarFarm", "Radar farm stopped.", 2)
+end
+
+Tab7:AddToggle({
+    Name = "🔵 Radar Farm",
+    CurrentValue = false,
+    Flag = "RadarFarm",
+    Callback = function(Value)
+        RadarFarmEnabled = Value
+        if Value then
+            task.spawn(function()
+                -- starte den Loop in einem Task
+                startRadarFarm()
+            end)
+        else
+            OrionLib:MakeNotification("RadarFarm", "Stopping radar farm...", 1)
+        end
+    end
+})
+
+
+-- 📦 Services
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local LocalPlayer = Players.LocalPlayer
+local VehiclesFolder = workspace:WaitForChild("Vehicles")
+
+-- 🏁 Orte
+local Locations = {
+    ["🔵 Kreisel"] = CFrame.new(-1067.5, 44.4, 2700.9),
+    ["🔵 Kirche"] = CFrame.new(-891.3,169.8,3130.9),
+    ["🔵 Bester Spot"] = CFrame.new(-1145.3 , 5.5  ,2802.7),
+}
+
+-- 🚗 Tween Teleport Funktion
+local function tweenTo(destination)
+    local car = VehiclesFolder:FindFirstChild(LocalPlayer.Name)
+    if not car then 
+        return OrionLib:MakeNotification({ Title="Fehler", Content="Spawn zuerst dein Auto!", Duration=3 }) 
+    end
+
+    car.PrimaryPart = car:FindFirstChild("DriveSeat", true)
+    if not car.PrimaryPart then 
+        return OrionLib:MakeNotification({ Title="Fehler", Content="Kein PrimaryPart gefunden!", Duration=3 }) 
+    end
+
+    car.DriveSeat:Sit(LocalPlayer.Character:WaitForChild("Humanoid"))
+
+    if typeof(destination) == "CFrame" then
+        destination = destination.Position
+    end
+
+    local start = car.PrimaryPart.Position
+    local steps = { start + Vector3.new(0, -5, 0), destination + Vector3.new(0, -5, 0), destination }
+
+    for _, target in ipairs(steps) do
+        local dist = (car.PrimaryPart.Position - target).Magnitude
+        local duration = dist / 175
+        local tweenInfo = TweenInfo.new(duration, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
+
+        local value = Instance.new("CFrameValue")
+        value.Value = car:GetPivot()
+
+        value.Changed:Connect(function(newCFrame)
+            car:PivotTo(newCFrame)
+            car.DriveSeat.AssemblyLinearVelocity = Vector3.zero
+            car.DriveSeat.AssemblyAngularVelocity = Vector3.zero
+        end)
+
+        local tween = TweenService:Create(value, tweenInfo, { Value = CFrame.new(target) })
+        tween:Play()
+        tween.Completed:Wait()
+        value:Destroy()
+    end
+end
+
+-- 🔽 Keys (Ortsnamen) extrahieren
+local locationNames = {}
+for name, _ in pairs(Locations) do
+    table.insert(locationNames, name)
+end
+
+-- 📌 Dropdown
+Tab7:AddDropdown({
+    Name = "🔵 RadarFarm places",
+    Options = locationNames,
+    CurrentOption = {locationNames[1]},
+    Flag = "RadarFarmDropdown",
+    Callback = function(option)
+        local choice = option[1] -- ✅ fix: Dropdown gibt Tabelle zurück
+        OrionLib:MakeNotification({
+            Title = "Auswahl",
+            Content = "📍 "..choice.." ausgewählt!",
+            Duration = 2
+        })
+    end
+})
+
+-- 📌 Teleport Button
+Tab7:AddButton({
+    Name = "🔵 Teleport",
+    Callback = function()
+        local choice = OrionLib.Flags["RadarFarmDropdown"].Value -- 🎉 FIX
+        if not choice or not Locations[choice] then
+            return OrionLib:MakeNotification({
+                Title = "Fehler",
+                Content = "Bitte zuerst einen Ort auswählen!",
+                Duration = 3
+            })
+        end
+
+        tweenTo(Locations[choice])
+        OrionLib:MakeNotification({
+            Title = "Teleport",
+            Content = "🚗💨 Teleport zu "..choice.." gestartet!",
+            Duration = 3
+        })
+    end
+})
+
+Tab7:AddSection({
+	Name = "Poice-Settings"
+})
+
+
+-- ⚡ Auto Taser (Rayfield Edition)
+Players = game:GetService("Players")
+ReplicatedStorage = game:GetService("ReplicatedStorage")
+RunService = game:GetService("RunService")
+
+LocalPlayer = Players.LocalPlayer
+
+-- 📡 Einstellungen
+local REMOTE_FOLDER = "MW5"
+local REMOTE_ID = "05e1f5a3-0391-4ea8-a2ea-71839b2417d7"
+local AUTO_TASER_INTERVAL = 0.5
+local MAX_TASE_RANGE = 80
+
+-- 🧠 Variablen
+autoEnabled = false
+lastTase = 0
+
+-- 🧩 Position des Tasers finden
+function getTaserPosition()
+	local char = LocalPlayer.Character
+	if not char then return nil, nil end
+
+	local taser = char:FindFirstChild("Taser")
+	if taser then
+		local handle = taser:FindFirstChild("Handle")
+		if handle and handle:IsA("BasePart") then
+			return handle.Position, taser
+		end
+	end
+
+	local hrp = char:FindFirstChild("HumanoidRootPart")
+	if hrp and hrp:IsA("BasePart") then
+		return hrp.Position, nil
+	end
+
+	return nil, nil
+end
+
+-- 🎯 Nächsten Gegner finden
+function findNearestEnemy(maxRange)
+	local pos = getTaserPosition()
+	if not pos then return nil end
+	local taserPos = pos
+	local nearestPlayer, nearestDist
+
+	for _, plr in ipairs(Players:GetPlayers()) do
+		if plr ~= LocalPlayer and plr.Team ~= LocalPlayer.Team then
+			local char = plr.Character
+			local hrp = char and char:FindFirstChild("HumanoidRootPart")
+			if hrp then
+				local dist = (hrp.Position - taserPos).Magnitude
+				if dist <= maxRange and (not nearestDist or dist < nearestDist) then
+					nearestDist = dist
+					nearestPlayer = plr
+				end
+			end
+		end
+	end
+	return nearestPlayer
+end
+
+-- ⚡ Gegner tasern
+function fireTaserAtTarget()
+	local taserPos, taserObj = getTaserPosition()
+	if not taserPos then return end
+
+	local target = findNearestEnemy(MAX_TASE_RANGE)
+	if not target or not target.Character then return end
+
+	local hrp = target.Character:FindFirstChild("HumanoidRootPart")
+	if not hrp then return end
+
+	local aimPos = hrp.Position
+	local dir = aimPos - taserPos
+	dir = dir.Magnitude == 0 and Vector3.zero or dir.Unit
+
+	local folder = ReplicatedStorage:FindFirstChild(REMOTE_FOLDER)
+	if not folder then return end
+
+	local remote = folder:FindFirstChild(REMOTE_ID)
+	if not remote then return end
+
+	local args = { taserObj, aimPos, dir }
+
+	pcall(function()
+		if remote:IsA("RemoteEvent") then
+			remote:FireServer(unpack(args))
+		elseif remote:IsA("RemoteFunction") then
+			remote:InvokeServer(unpack(args))
+		end
+	end)
+end
+
+-- 🔁 Automatischer Loop
+RunService.RenderStepped:Connect(function()
+	if autoEnabled and tick() - lastTase >= AUTO_TASER_INTERVAL then
+		fireTaserAtTarget()
+		lastTase = tick()
+	end
+end)
+
+-- 🟢 Rayfield-Toggle (kein Callback-Error mehr)
+Tab7:AddToggle({
+	Name = "🔵 Auto Taser",
+	CurrentValue = false,
+	Flag = "AutoTaser",
+	Callback = function(Value)
+		autoEnabled = Value
+
+		if Value then
+			OrionLib:MakeNotification({
+				Title = "Auto Taser aktiviert ⚡",
+				Content = "Automatisches Tasern läuft.",
+				Duration = 3
+			})
+		else
+			OrionLib:MakeNotification({
+				Title = "Auto Taser gestoppt ⛔",
+				Content = "Automatisches Tasern beendet.",
+				Duration = 3
+			})
+		end
+	end
+})
+
+Tab7:AddSection({
+	Name = "🔵 Anti-Police"
+})
+
+antiTaserActive = false
+antiTaserConnection = nil
+
+-- Funktion zum Aktivieren oder Deaktivieren
+function toggleAntiTaser(state)
+	antiTaserActive = state
+
+	if antiTaserActive then
+		-- Sofort sicherstellen, dass "Tased" auf false ist
+		local char = game.Players.LocalPlayer.Character or game.Players.LocalPlayer.CharacterAdded:Wait()
+		char:SetAttribute("Tased", false)
+
+		-- Verbindung setzen
+		antiTaserConnection = char:GetAttributeChangedSignal("Tased"):Connect(function()
+			if antiTaserActive then
+				char:SetAttribute("Tased", false)
+			end
+		end)
+	else
+		if antiTaserConnection then
+			antiTaserConnection:Disconnect()
+			antiTaserConnection = nil
+		end
+	end
+end
+
+-- Rayfield Toggle
+Tab7:AddToggle({
+	Name = "🔵 Anti-Taser",
+	CurrentValue = false,
+	Callback = function(state)
+		toggleAntiTaser(state)
+	end
+})
+
+
+AntiArrestToggle = false
+
+Tab7:AddToggle({
+	Name = "🔵 Anti Arrest",
+	CurrentValue = false,
+	Callback = function(state)
+		AntiArrestToggle = state
+	end
+})
+
+-- Sicherheitssystem
+task.spawn(function()
+	local Players = game:GetService("Players")
+	local player = Players.LocalPlayer
+	local character = player.Character or player.CharacterAdded:Wait()
+	local rootPart = character:WaitForChild("HumanoidRootPart")
+	local raycastParams = RaycastParams.new()
+	raycastParams.FilterDescendantsInstances = {character}
+	raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
+
+	-- Position sicher?
+	local function isPositionSafe(position)
+		local region = Region3.new(position - Vector3.new(1,1,1), position + Vector3.new(1,1,1))
+		local parts = workspace:FindPartsInRegion3(region, character, 100)
+		for _, part in ipairs(parts) do
+			if part.CanCollide then return false end
+		end
+		return true
+	end
+
+	-- Finde sichere Fluchtposition
+	local function findSafeTeleportPosition(fromPosition, awayFromPosition)
+		local directions = {
+			Vector3.new(1, 0, 0),
+			Vector3.new(-1, 0, 0),
+			Vector3.new(0, 0, 1),
+			Vector3.new(0, 0, -1),
+			Vector3.new(0, 1, 0),
+			Vector3.new(0, -1, 0),
+			Vector3.new(1, 1, 0).Unit,
+			Vector3.new(-1, 1, 0).Unit,
+			Vector3.new(0, 1, 1).Unit,
+			Vector3.new(0, 1, -1).Unit
+		}
+		table.insert(directions, 1, (fromPosition - awayFromPosition).Unit)
+
+		for _, dir in ipairs(directions) do
+			local testPosition = fromPosition + (dir * 8)
+			local ray = workspace:Raycast(fromPosition, dir * 8, raycastParams)
+			if not ray or (ray.Instance and not ray.Instance.CanCollide) then
+				if isPositionSafe(testPosition) then
+					return testPosition
+				end
+			end
+		end
+		return fromPosition + Vector3.new(0, 5, 0)
+	end
+
+	-- Haupt-Loop
+	while true do
+		task.wait(0.2)
+		if AntiArrestToggle then
+			character = player.Character or player.CharacterAdded:Wait()
+			rootPart = character:FindFirstChild("HumanoidRootPart")
+			raycastParams.FilterDescendantsInstances = {character}
+
+			if rootPart and not character.Humanoid.Sit then
+				for _, otherPlayer in ipairs(Players:GetPlayers()) do
+					if otherPlayer ~= player and otherPlayer.Team and otherPlayer.Team.Name:lower() == "police" then
+						local otherRoot = otherPlayer.Character and otherPlayer.Character:FindFirstChild("HumanoidRootPart")
+						if otherRoot then
+							local distance = (otherRoot.Position - rootPart.Position).Magnitude
+							if distance <= 10 then
+								local safePos = findSafeTeleportPosition(rootPart.Position, otherRoot.Position)
+								rootPart.CFrame = CFrame.new(safePos)
+
+								game.StarterGui:SetCore("SendNotification", {
+									Title = "Anti-Arrest",
+									Text = "Zu nah an Polizei - sichere Position gewählt!",
+									Duration = 2
+								})
+							end
+						end
+					end
+				end
+			end
+		end
+	end
+end)
+
+
+
+Tab7:AddToggle({
+    Name = "🔵 Anti-fall-damage",
+    Flag = "Toggle3",
+    CurrentValue = false,
+    Callback = function(enabled)
+        local Players = game:GetService("Players")
+        local RunService = game:GetService("RunService")
+        local player = Players.LocalPlayer
+        local connection
+
+        local function startAntiFall()
+            if connection then connection:Disconnect() end
+            connection = RunService.RenderStepped:Connect(function()
+                local char = player.Character
+                local hrp = char and char:FindFirstChild("HumanoidRootPart")
+                local humanoid = char and char:FindFirstChildOfClass("Humanoid")
+                if hrp and humanoid then
+                    if hrp.Velocity.Y < -80 then
+                        hrp.Velocity = Vector3.new(hrp.Velocity.X, -10, hrp.Velocity.Z)
+                    end
+                end
+            end)
+        end
+
+        if enabled then
+            startAntiFall()
+            player.CharacterAdded:Connect(function()
+                wait(1)
+                if enabled then
+                    startAntiFall()
+                end
+            end)
+        else
+            if connection then
+                connection:Disconnect()
+                connection = nil
+            end
+        end
+    end,
+})
+
+Tab7:AddToggle({
+    Name = "🔵 God Mode",
+    CurrentValue = false,
+    Flag = "Toggle2",
+    SectionParent = OtherSection,
+    Callback = function(Value)
+        getgenv().godMode = Value
+        while true do
+            if not getgenv().godMode then return end
+
+            game.Players.LocalPlayer.Character.Humanoid.Health = 100
+            task.wait()
+        end
+    end,
+})
+
+Tab8 = Window:MakeTab({
+	Name = "Server | 🤓",
+	Icon = "",
+	PremiumOnly = false
+})
+
+Tab8:AddSection({
+	Name = "Server-Settings"
+})
+
+Tab8:AddButton({
+    Name = "🟡 Rejoin",
+    Callback = function()
+        game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, game.JobId, game.Players.LocalPlayer)
+    end,
+})
+
+Tab8:AddButton({
+    Name = "🟡 Leave",
+    Callback = function()
+        game:GetService("Players").LocalPlayer:Kick("You have left the game.")
+    end,
+})
+
+function RejoinToNewLobby()
+	local HttpService = game:GetService("HttpService")
+	local TeleportService = game:GetService("TeleportService")
+	local PlaceId = game.PlaceId
+	local Player = game.Players.LocalPlayer
+
+	local success, response = pcall(function()
+		return HttpService:JSONDecode(
+			game:HttpGet("https://games.roblox.com/v1/games/"..PlaceId.."/servers/Public?sortOrder=Asc&limit=100")
+		)
+	end)
+
+	if success and response and response.data then
+		for _, server in pairs(response.data) do
+			if server.playing < server.maxPlayers and server.id ~= game.JobId then
+				TeleportService:TeleportToPlaceInstance(PlaceId, server.id, Player)
+				return
+			end
+		end
+	end
+
+	OrionLib:MakeNotification({
+		Title = "⚠️ Fehler",
+		Content = "Keine andere Lobby gefunden. Bitte erneut versuchen.",
+		Duration = 4
+	})
+end
+
+-- 🔘 Button zum Wechseln der Lobby
+Tab8:AddButton({
+	Name = "🟡 Server-Hop",
+	Callback = function()
+		RejoinToNewLobby()
+	end
+})
+
+Tab8:AddSection({
+	Name = "🟡 More-FPS"
+})
+
+
+-- Funktion
+function toggleXRay(enabled)
+    for _, obj in ipairs(workspace:GetDescendants()) do
+        if obj:IsA("BasePart") 
+        and obj.Transparency < 1 
+        and not obj:IsDescendantOf(game.Players.LocalPlayer.Character) then
+            obj.LocalTransparencyModifier = enabled and 0.8 or 0
+        end
+    end
+end
+
+-- Toggle in Rayfield
+Tab8:AddToggle({
+    Name = "🟡 XRay",
+    CurrentValue = false,
+    Flag = "XRayToggle", 
+    Callback = function(Value)
+        toggleXRay(Value)
+    end,
+})
+
+
+-- NightVision Funktion
+function enableNightVision(val)
+    local lighting = game:GetService("Lighting")
+    local existing = lighting:FindFirstChild("NightVision")
+    if val and not existing then
+        local cc = Instance.new("ColorCorrectionEffect", lighting)
+        cc.Name = "NightVision"
+        cc.TintColor = Color3.fromRGB(128, 255, 128)
+        cc.Contrast = 0.1
+        cc.Saturation = 1
+    elseif not val and existing then
+        existing:Destroy()
+    end
+end
+
+-- NightVision Toggle
+Tab8:AddToggle({
+    Name = "🟡 Night Vision",
+    CurrentValue = false,
+    Flag = "NightVisionToggle", 
+    Callback = function(Value)
+        enableNightVision(Value)
+    end,
+})
+
+
+-- Dein Fullbright Code
+fullbrightOn = false
+function enableFullbright(val)
+    fullbrightOn = val
+    local lighting = game:GetService("Lighting")
+    if val then
+        lighting.Ambient = Color3.new(1,1,1)
+        lighting.OutdoorAmbient = Color3.new(1,1,1)
+        lighting.Brightness = 3
+        lighting.FogEnd = 1000000
+    else
+        lighting.Ambient = Color3.fromRGB(112, 112, 112)
+        lighting.OutdoorAmbient = Color3.fromRGB(112, 112, 112)
+        lighting.Brightness = 1
+        lighting.FogEnd = 1000
+    end
+end
+
+-- Toggle erstellen
+Tab8:AddToggle({
+    Name = "🟡 Fullbright",
+    CurrentValue = false,
+    Flag = "FullbrightToggle", 
+    Callback = function(Value)
+        enableFullbright(Value)
+    end,
+})
+
+Tab8:AddButton({
+    Name = "🟡 FPS-Booster",
+    Callback = function()
+        -- Nur globale Effekte und Schatten deaktivieren, aber KEINE Texturen, KEIN Sky, KEINE Häuser/Objekte entfernen!
+        game.Lighting.GlobalShadows = false
+        game.Lighting.FogEnd = 1000
+        game.Lighting.Brightness = 1
+        game.Lighting.OutdoorAmbient = Color3.new(1,1,1)
+        -- Terrain Wasser optimieren (aber keine Häuser oder Terrain löschen!)
+        if workspace:FindFirstChildOfClass("Terrain") then
+            local terrain = workspace:FindFirstChildOfClass("Terrain")
+            terrain.WaterWaveSize = 0
+            terrain.WaterWaveSpeed = 0
+            terrain.WaterReflectance = 0
+            terrain.WaterTransparency = 1
+        end
+        -- Nur GUI-Effekte entfernen
+        for _, v in pairs(game:GetService("StarterGui"):GetDescendants()) do
+            if v:IsA("BlurEffect") or v:IsA("SunRaysEffect") or v:IsA("ColorCorrectionEffect") or v:IsA("BloomEffect") or v:IsA("DepthOfFieldEffect") then
+                v.Enabled = false
+            end
+        end
+        -- Renderqualität runtersetzen
+        settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
+    end,
+})
+
+Tab8:AddButton({
+    Name = "🟡 Remove-Sky",
+    Callback = function()
+        game.Lighting.Sky:Destroy() -- Remove the sky object
+    end,
+})
+
+
+Tab9 = Window:MakeTab({
+	Name = "Info | 📢",
+	Icon = "",
+	PremiumOnly = false
+})
+
+Tab9:AddSection({
+	Name = "Infos"
+})
+
+Tab9:AddLabel("Authors: Trixo and Zeroo", 4483362458, Color3.fromRGB(255, 255, 255), false) -- Title, Icon, Color, IgnoreTheme
+Tab9:AddLabel("Version: 2.0", 4483362458, Color3.fromRGB(255, 255, 255), false) -- Title, Icon, Color, IgnoreTheme
+Tab9:AddButton({
+	Name = "Trixo Discord",
+	Callback = function()
+		setclipboard("https://discord.gg/fqzdkQrvxy")
+		OrionLib:MakeNotification({
+			Title = "Discord-Link kopiert!",
+			Content = "Füge ihn in deinen Browser ein oder Discord.",
+			Duration = 5
+		})
+	end
+})
+
+Tab9:AddButton({
+	Name = "Trixo YouTube",
+	Callback = function()
+		setclipboard("https://youtube.com/@toxo-zp2kx?si=oJTzPIXp2XncsJfG")
+		OrionLib:MakeNotification({
+			Title = "YouTube-Link kopiert!",
+			Content = "Füge ihn in deinen Browser ein oder Discord.",
+			Duration = 5
+		})
+	end
+})
+
+Tab9:AddButton({
+	Name = "Trixo TikTok",
+	Callback = function()
+		setclipboard("https://www.tiktok.com/@trixo_55?_r=1&_t=ZS-923SrfVR6iG")
+		OrionLib:MakeNotification({
+			Title = "TikTok-Link kopiert!",
+			Content = "Füge ihn in deinen Browser ein oder Discord.",
+			Duration = 5
+		})
+	end
+})
