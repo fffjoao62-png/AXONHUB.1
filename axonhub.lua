@@ -2,7 +2,7 @@
 local OrionLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/HeavenlyScripts/1nig1htmare1234-OrionLib-with-Black-CheckMarks/main/Orion.lua"))()
 
 local Window = OrionLib:MakeWindow({
-    Name = "│Trixo v13 │〄Emergency Hamburg",
+    Name = "│axon HUB│〄Emergency Hamburg",
     HidePremium = false,
     SaveConfig = true,
     ConfigFolder = "test",
